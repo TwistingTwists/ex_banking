@@ -36,6 +36,25 @@ defmodule NewTest do
     ExBanking.withdraw("jon", 10, "USD")
     ExBanking.withdraw("jon", 1000, "USD")
     ExBanking.withdraw("jon", 10, "EUR")
-    ExBanking.withdraw("jon", 10, "INR")
+    ExBanking.withdraw("joyn", 10, "INR")
   end
+
+  def via(name) do
+    {:via, Registry, {ExBanking.Registry.User, name}}
+  end
+
+  def get_balance do
+    ExBanking.create_user("jon")
+    ExBanking.deposit("jon", 100, "USD")
+    ExBanking.deposit("jon", 1000, "INR")
+
+    ExBanking.withdraw("jon", 10, "USD")
+    ExBanking.withdraw("jon", 1000, "USD")
+
+    ExBanking.get_balance("jon", "USD")
+    ExBanking.get_balance("jon", "INR")
+    ExBanking.get_balance("jon", "YEN")
+  end
+
+  # GenServer.call(NewTest.via("jon"), {:deposit, 100, "USD"})
 end

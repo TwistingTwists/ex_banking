@@ -49,19 +49,22 @@ defmodule ExBanking do
   def deposit(user, amount, currency)
       when is_binary(user) and is_binary(currency) and is_number(amount) and amount >= 0 do
     # check if user exists
-    case does_exist?(user) do
-      [] ->
-        {:error, :user_does_not_exist}
 
-      _ ->
-        UServer.deposit(user, amount, currency)
-    end
+    with_user_does_not_exist_error(ExBanking.UserServer, :deposit, [user, amount, currency])
+    # case does_exist?(user) do
+    #   [] ->
+    #     {:error, :user_does_not_exist}
+
+    #   _ ->
+    #     UServer.deposit(user, amount, currency)
+    # end
   end
 
   def deposit(_u, _a, _c) do
     {:error, :wrong_arguments}
   end
 
+  ############## withdraw  ##############
   @spec withdraw(user :: String.t(), amount :: number, currency :: String.t()) ::
           {:ok, new_balance :: number}
           | {:error,
@@ -71,13 +74,19 @@ defmodule ExBanking do
              | :too_many_requests_to_user}
   def withdraw(user_string, amount, currency)
       when is_binary(user_string) and is_number(amount) and amount > 0 and is_binary(currency) do
-    case does_exist?(user_string) do
-      [] ->
-        {:error, :user_does_not_exist}
+    with_user_does_not_exist_error(ExBanking.UserServer, :withdraw, [
+      user_string,
+      amount,
+      currency
+    ])
 
-      _ ->
-        UServer.withdraw(user_string, amount, currency)
-    end
+    #     case does_exist?(user_string) do
+    #   [] ->
+    #     {:error, :user_does_not_exist}
+
+    #   _ ->
+    #     UServer.withdraw(user_string, amount, currency)
+    # end
   end
 
   def withdraw(_user, _amount, _currency) do
@@ -87,8 +96,28 @@ defmodule ExBanking do
   # Decreases user’s balance in given currency by amount value
   # Returns new_balance of the user in given format
 
+  @spec get_balance(user :: String.t(), currency :: String.t()) ::
+          {:ok, balance :: number}
+          | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
+  def get_balance(user, currency) when is_binary(user) and is_binary(currency) do
+    with_user_does_not_exist_error(ExBanking.UserServer, :get_balance, [user, currency])
+  end
+
   defp does_exist?(user) do
     Registry.lookup(ExBanking.Registry.User, user)
     # == []
+  end
+
+  def with_user_does_not_exist_error(m, f, arguments) do
+    # [mfa ] = https://hexdocs.pm/elixir/master/Kernel.html#apply/3
+    [user | _tail] = arguments
+
+    case does_exist?(user) do
+      [] ->
+        {:error, :user_does_not_exist}
+
+      _ ->
+        Kernel.apply(m, f, arguments)
+    end
   end
 end

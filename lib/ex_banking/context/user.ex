@@ -22,12 +22,12 @@ defmodule ExBanking.User do
       :error ->
         # currency does not exist yet, create it
         new_monies = Map.put(user.monies, currency, 0.00 + amount)
-        %{user | monies: new_monies}
+        {:ok, %{user | monies: new_monies}}
 
       {:ok, balance} ->
         # common function for deposit or withdraw
         new_monies = Map.put(user.monies, currency, balance + amount)
-        %{user | monies: new_monies}
+        {:ok, %{user | monies: new_monies}}
     end
   end
 
@@ -60,6 +60,17 @@ defmodule ExBanking.User do
         # common function for deposit or withdraw
         new_monies = Map.put(user.monies, currency, balance + amount)
         %{user | monies: new_monies}
+    end
+  end
+
+  def get_balance(user, currency) do
+    case Map.fetch(user.monies, currency) do
+      :error ->
+        new_monies = Map.put(user.monies, currency, 0.0)
+        {:ok, %{user | monies: new_monies}}
+
+      {:ok, _balance} ->
+        {:ok, user}
     end
   end
 

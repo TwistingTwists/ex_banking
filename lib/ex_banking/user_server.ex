@@ -40,6 +40,11 @@ defmodule ExBanking.UserServer do
     |> to_withdraw(user_string, amount, currency)
   end
 
+  def get_balance(user_string, currency) do
+    RLServer.calls_allowed?(user_string)
+    |> to_balance(user_string, currency)
+  end
+
   ############## server  ##############
   @impl GenServer
   def init(name) do
@@ -47,15 +52,9 @@ defmodule ExBanking.UserServer do
   end
 
   @impl GenServer
-  def handle_call({:get_balance, currency}, _from, user) do
-    return_value = {:ok, user.monies[currency]}
-    {:reply, return_value, user}
-  end
-
-  @impl GenServer
   def handle_call({:deposit, amount, currency}, _from, user) do
     Process.sleep(300)
-    updated_user = User.deposit(user, amount, currency)
+    {:ok, updated_user} = User.deposit(user, amount, currency)
     # {:ok,new_balance}
     return_value = {:ok, updated_user.monies[currency] |> Float.round(2)}
 
@@ -79,8 +78,15 @@ defmodule ExBanking.UserServer do
     {:reply, return_value, updated_user}
   end
 
+  def handle_call({:get_balance, currency}, _from, user) do
+    {:ok, updated_user} = User.get_balance(user, currency)
+    IO.inspect(updated_user)
+    balance = Map.get(updated_user.monies, currency) |> Float.round(2)
+    {:reply, balance, updated_user}
+  end
+
   ########## private company ##########
-  defp via(name) do
+  def via(name) do
     {:via, Registry, {ExBanking.Registry.User, name}}
   end
 
@@ -97,6 +103,17 @@ defmodule ExBanking.UserServer do
 
   defp to_withdraw(:ok, user_string, amount, currency) do
     return_val = GenServer.call(via(user_string), {:withdraw, amount, currency})
+    count_value = RLServer.processed(user_string)
+    IO.inspect([count_value, " -- processed withdraw"])
+    return_val
+  end
+
+  defp to_balance(:too_many_requests_to_user, _, _), do: {:error, :too_many_requests_to_user}
+
+  defp to_balance(:ok, user_string, currency) do
+    return_val = GenServer.call(via(user_string), {:get_balance, currency})
+    IO.inspect("------------------------")
+    IO.inspect(return_val)
     count_value = RLServer.processed(user_string)
     IO.inspect([count_value, " -- processed withdraw"])
     return_val
