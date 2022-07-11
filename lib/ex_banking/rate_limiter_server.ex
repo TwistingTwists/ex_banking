@@ -10,9 +10,6 @@ defmodule ExBanking.RateLimiterServer do
   end
 
   def processed(name) do
-    # IO.inspect("=----=----=---- INSIDE -> RLServer.processed -  =----=----=----")
-    # IO.inspect(via(name))
-    # IO.inspect("=----=----=---- genserver.cast -> RLServer.processed -  =----=----=----")
     GenServer.call(via(name), :processed)
   end
 
@@ -23,16 +20,14 @@ defmodule ExBanking.RateLimiterServer do
 
   @impl GenServer
   def handle_call(:call, _from, count) do
-    # IO.inspect("=--- count from calls_allowed? - #{count} =---=---")
-
     {reply_message, new_count} =
       cond do
         count + 1 > 10 ->
           {:too_many_requests_to_user, count}
 
         count + 1 <= 10 ->
-          {count + 1, count + 1}
-          # {:ok, count + 1}
+          # {count + 1, count + 1}
+          {:ok, count + 1}
       end
 
     {:reply, reply_message, new_count}

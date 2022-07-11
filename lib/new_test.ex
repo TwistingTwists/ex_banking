@@ -27,4 +27,15 @@ defmodule NewTest do
     result1 = result1 |> Enum.map(&Task.await/1)
     result ++ result1
   end
+
+  def withdraw_test do
+    ExBanking.create_user("jon")
+    ExBanking.deposit("jon", 100, "USD")
+    ExBanking.deposit("jon", 1000, "INR")
+
+    ExBanking.withdraw("jon", 10, "USD")
+    ExBanking.withdraw("jon", 1000, "USD")
+    ExBanking.withdraw("jon", 10, "EUR")
+    ExBanking.withdraw("jon", 10, "INR")
+  end
 end

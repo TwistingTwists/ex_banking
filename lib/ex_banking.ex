@@ -51,7 +51,7 @@ defmodule ExBanking do
     # check if user exists
     case does_exist?(user) do
       [] ->
-        :user_does_not_exist
+        {:error, :user_does_not_exist}
 
       _ ->
         UServer.deposit(user, amount, currency)
@@ -62,9 +62,30 @@ defmodule ExBanking do
     {:error, :wrong_arguments}
   end
 
-  # defp via_user_registry(user) do
-  #   {:via, Registry, {ExBanking.Registry.User, name}}
-  # end
+  @spec withdraw(user :: String.t(), amount :: number, currency :: String.t()) ::
+          {:ok, new_balance :: number}
+          | {:error,
+             :wrong_arguments
+             | :user_does_not_exist
+             | :not_enough_money
+             | :too_many_requests_to_user}
+  def withdraw(user_string, amount, currency)
+      when is_binary(user_string) and is_number(amount) and amount > 0 and is_binary(currency) do
+    case does_exist?(user_string) do
+      [] ->
+        {:error, :user_does_not_exist}
+
+      _ ->
+        UServer.withdraw(user_string, amount, currency)
+    end
+  end
+
+  def withdraw(_user, _amount, _currency) do
+    {:error, :wrong_arguments}
+  end
+
+  # Decreases user’s balance in given currency by amount value
+  # Returns new_balance of the user in given format
 
   defp does_exist?(user) do
     Registry.lookup(ExBanking.Registry.User, user)

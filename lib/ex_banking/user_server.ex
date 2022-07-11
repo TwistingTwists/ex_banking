@@ -29,9 +29,15 @@ defmodule ExBanking.UserServer do
     #     IO.inspect([count_value, " -- decreased"])
     #     return_val
     # end
+    # |> with_response()
 
     RLServer.calls_allowed?(user_string)
-    |> to_deposit(amount, currency)
+    |> to_deposit(user_string, amount, currency)
+  end
+
+  def withdraw(user_string, amount, currency) do
+    RLServer.calls_allowed?(user_string)
+    |> to_withdraw(user_string, amount, currency)
   end
 
   ############## server  ##############
@@ -59,17 +65,40 @@ defmodule ExBanking.UserServer do
     {:reply, return_value, updated_user}
   end
 
+  def handle_call({:withdraw, amount, currency}, _from, user) do
+    {return_value, updated_user} =
+      case User.withdraw(user, amount, currency) do
+        {:not_enough_money, updated_user} ->
+          {{:error, :not_enough_money}, updated_user}
+
+        {:ok, updated_user} ->
+          # {:ok,new_balance}
+          {{:ok, updated_user.monies[currency] |> Float.round(2)}, updated_user}
+      end
+
+    {:reply, return_value, updated_user}
+  end
+
   ########## private company ##########
   defp via(name) do
     {:via, Registry, {ExBanking.Registry.User, name}}
   end
 
-  defp to_deposit(:too_many_requests_to_user, _, _), do: :too_many_requests_to_user
+  defp to_deposit(:too_many_requests_to_user, _, _, _), do: {:error, :too_many_requests_to_user}
 
-  defp to_deposit(user_string, amount, currency) do
+  defp to_deposit(:ok, user_string, amount, currency) do
     return_val = GenServer.call(via(user_string), {:deposit, amount, currency})
     count_value = RLServer.processed(user_string)
     IO.inspect([count_value, " -- decreased"])
+    return_val
+  end
+
+  defp to_withdraw(:too_many_requests_to_user, _, _, _), do: {:error, :too_many_requests_to_user}
+
+  defp to_withdraw(:ok, user_string, amount, currency) do
+    return_val = GenServer.call(via(user_string), {:withdraw, amount, currency})
+    count_value = RLServer.processed(user_string)
+    IO.inspect([count_value, " -- processed withdraw"])
     return_val
   end
 end

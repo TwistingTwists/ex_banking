@@ -31,6 +31,21 @@ defmodule ExBanking.User do
     end
   end
 
+  def withdraw(user, amount, currency) when amount > 0 do
+    case Map.fetch(user.monies, currency) do
+      :error ->
+        {:not_enough_money, user}
+
+      {:ok, balance} ->
+        if balance - amount >= 0 do
+          new_monies = Map.put(user.monies, currency, balance - amount)
+          {:ok, %{user | monies: new_monies}}
+        else
+          {:not_enough_money, user}
+        end
+    end
+  end
+
   def update_currency_balance(user, amount, currency) when amount >= 0 do
     case Map.fetch(user.monies, currency) do
       :error ->
