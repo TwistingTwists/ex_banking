@@ -56,5 +56,32 @@ defmodule NewTest do
     ExBanking.get_balance("jon", "YEN")
   end
 
+  def send do
+    ExBanking.create_user("jon")
+    ExBanking.create_user("absek")
+    ExBanking.deposit("jon", 100, "USD")
+    ExBanking.deposit("jon", 200, "INR")
+    ExBanking.deposit("absek", 1000, "USD")
+    ExBanking.deposit("absek", 2000, "INR")
+
+    ExBanking.get_balance("jon", "USD")
+    ExBanking.get_balance("jon", "INR")
+
+    ExBanking.get_balance("absek", "USD")
+    ExBanking.get_balance("absek", "INR")
+
+    ExBanking.send("jon", "absek", 100, "INR")
+    ExBanking.send("jon", "absek", 1000, "INR")
+    ExBanking.send("jon", "absek", 100, "USD")
+    ExBanking.send("absek", "jon", 100, "USD")
+    ExBanking.send("absek", "jon", 100, "INR")
+
+    ExBanking.send("aabsek", "jon", 100, "USD")
+    ExBanking.send("absek", "jaon", 100, "INR")
+
+    ExBanking.send("absek", "jon", 100, "lasf")
+    ExBanking.send("absek", "jon", 100, "INR")
+  end
+
   # GenServer.call(NewTest.via("jon"), {:deposit, 100, "USD"})
 end

@@ -103,6 +103,40 @@ defmodule ExBanking do
     with_user_does_not_exist_error(ExBanking.UserServer, :get_balance, [user, currency])
   end
 
+  @spec send(
+          from_user :: String.t(),
+          to_user :: String.t(),
+          amount :: number,
+          currency :: String.t()
+        ) ::
+          {:ok, from_user_balance :: number, to_user_balance :: number}
+          | {:error,
+             :wrong_arguments
+             | :not_enough_money
+             | :sender_does_not_exist
+             | :receiver_does_not_exist
+             | :too_many_requests_to_sender
+             | :too_many_requests_to_receiver}
+  def send(from_user, to_user, amount, currency)
+      when is_binary(from_user) and is_binary(to_user) and is_binary(currency) and
+             is_number(amount) and amount > 0 do
+    case does_exist?(from_user) do
+      [] ->
+        {:error, :sender_does_not_exist}
+
+      _ ->
+        case does_exist?(to_user) do
+          [] ->
+            {:error, :receiver_does_not_exist}
+
+          _ ->
+            UServer.send(from_user,to_user,amount,currency)
+        end
+    end
+  end
+
+  def send(_f, _t, _a, _c), do: {:error, :wrong_arguments}
+
   defp does_exist?(user) do
     Registry.lookup(ExBanking.Registry.User, user)
     # == []

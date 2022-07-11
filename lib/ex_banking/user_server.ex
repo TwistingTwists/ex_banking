@@ -85,7 +85,24 @@ defmodule ExBanking.UserServer do
     {:reply, balance, updated_user}
   end
 
-  ########## private company ##########
+  def handle_call({:send, to_user, amount, currency}, _from, from_user) do
+    # if from_user can withdraw , then send the money to to_user
+    {return_value, updated_from_user} =
+      case User.withdraw(from_user, amount, currency) do
+        {:not_enough_money, updated_user} ->
+          {{:error, :not_enough_money}, updated_user}
+
+        {:ok, updated_user} ->
+          from_user_balance = updated_user.monies[currency] |> Float.round(2)
+          {:ok, to_user_balance} = GenServer.call(via(to_user), {:deposit, amount, currency})
+          count_value = RLServer.processed(to_user)
+          {{:ok, from_user_balance, to_user_balance}, updated_user}
+      end
+
+    {:reply, return_value, updated_from_user}
+  end
+
+  ########## private  ##########
   def via(name) do
     {:via, Registry, {ExBanking.Registry.User, name}}
   end
@@ -95,7 +112,7 @@ defmodule ExBanking.UserServer do
   defp to_deposit(:ok, user_string, amount, currency) do
     return_val = GenServer.call(via(user_string), {:deposit, amount, currency})
     count_value = RLServer.processed(user_string)
-    IO.inspect([count_value, " -- decreased"])
+    # IO.inspect([count_value, " -- decreased"])
     return_val
   end
 
@@ -104,7 +121,6 @@ defmodule ExBanking.UserServer do
   defp to_withdraw(:ok, user_string, amount, currency) do
     return_val = GenServer.call(via(user_string), {:withdraw, amount, currency})
     count_value = RLServer.processed(user_string)
-    IO.inspect([count_value, " -- processed withdraw"])
     return_val
   end
 
@@ -112,10 +128,31 @@ defmodule ExBanking.UserServer do
 
   defp to_balance(:ok, user_string, currency) do
     return_val = GenServer.call(via(user_string), {:get_balance, currency})
-    IO.inspect("------------------------")
-    IO.inspect(return_val)
+    # IO.inspect("------------------------")
+    # IO.inspect(return_val)
     count_value = RLServer.processed(user_string)
-    IO.inspect([count_value, " -- processed withdraw"])
+    # IO.inspect([count_value, " -- processed withdraw"])
+    return_val
+  end
+
+  # defp to_user_send(:too_many_requests_to_user, _, _, _, _),
+  #   do: {:error, :too_many_requests_to_receiver}
+
+  # defp to_user_send(:ok, from_user, to_user, amount, currency) do
+  #   RLServer.calls_allowed?(from_user)
+  #   |> from_user_send(from_user, to_user, amount, currency)
+  # end
+  def send(from_user, to_user, amount, currency) do
+    RLServer.calls_allowed?(from_user)
+    |> from_user_send(from_user, to_user, amount, currency)
+  end
+
+  defp from_user_send(:too_many_requests_to_user, _, _, _, _),
+    do: {:error, :too_many_requests_to_sender}
+
+  defp from_user_send(:ok, from_user, to_user, amount, currency) do
+    return_val = GenServer.call(via(from_user), {:send, to_user, amount, currency})
+    count_val = RLServer.processed(from_user)
     return_val
   end
 end
