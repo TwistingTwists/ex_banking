@@ -2,7 +2,7 @@ defmodule ExBanking do
   @moduledoc """
   Documentation for `ExBanking`.
   """
-  # alias ExBanking.Users
+
   alias ExBanking.UserSupervisor, as: USup
   alias ExBanking.UserServer, as: UServer
   alias ExBanking.RateLimiterSupervisor, as: RSup
@@ -51,13 +51,6 @@ defmodule ExBanking do
     # check if user exists
 
     with_user_does_not_exist_error(ExBanking.UserServer, :deposit, [user, amount, currency])
-    # case does_exist?(user) do
-    #   [] ->
-    #     {:error, :user_does_not_exist}
-
-    #   _ ->
-    #     UServer.deposit(user, amount, currency)
-    # end
   end
 
   def deposit(_u, _a, _c) do
@@ -130,7 +123,7 @@ defmodule ExBanking do
             {:error, :receiver_does_not_exist}
 
           _ ->
-            UServer.send(from_user,to_user,amount,currency)
+            UServer.send(from_user, to_user, amount, currency)
         end
     end
   end

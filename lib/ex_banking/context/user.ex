@@ -46,23 +46,6 @@ defmodule ExBanking.User do
     end
   end
 
-  def update_currency_balance(user, amount, currency) when amount >= 0 do
-    case Map.fetch(user.monies, currency) do
-      :error ->
-        # that currency did not exist, so
-        # 1. can deposit but can't withdraw
-        # 2. create it in monies if deposit
-        # 3.
-        new_monies = Map.put(user.monies, currency, 0.00 + amount)
-        %{user | monies: new_monies}
-
-      {:ok, balance} ->
-        # common function for deposit or withdraw
-        new_monies = Map.put(user.monies, currency, balance + amount)
-        %{user | monies: new_monies}
-    end
-  end
-
   def get_balance(user, currency) do
     case Map.fetch(user.monies, currency) do
       :error ->
@@ -73,21 +56,4 @@ defmodule ExBanking.User do
         {:ok, user}
     end
   end
-
-  # def update_user_balance(_, _), do: :wrong_arguments
-
-  # defp add_to_balance(balance, amount) do
-  #   if balance + amount < 0 do
-  #     # withdraw not possible
-  #     {:error, :not_enough_money}
-  #   else
-  #     {:ok, balance + amount}
-  #   end
-  # end
-
-  # defp with_balance(from_add_to_balance) do
-  #   with {:ok, balance} <- from_add_to_balance
-  # end
-
-  # defimpl String.Chars
 end

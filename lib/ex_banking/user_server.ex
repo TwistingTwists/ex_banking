@@ -3,7 +3,6 @@ defmodule ExBanking.UserServer do
   use GenServer
 
   alias ExBanking.User
-  # alias ExBanking.Users
   alias ExBanking.UserServer, as: Server
   alias ExBanking.RateLimiterServer, as: RLServer
 
@@ -14,23 +13,6 @@ defmodule ExBanking.UserServer do
   end
 
   def deposit(user_string, amount, currency) do
-    # case RLServer.calls_allowed?(user_string) do
-    #   :too_many_requests_to_user ->
-    #     :too_many_requests_to_user
-
-    #   count ->
-    #     IO.inspect([count, "--incrased"])
-    #     # if calls can be made, update deposit
-    #     # one amount >= 0 guard clause in UServer also. can remove it?
-    #     # return_value = UServer.deposit(user, amount, currency)
-
-    #     return_val = GenServer.call(via(user_string), {:deposit, amount, currency})
-    #     count_value = RLServer.processed(user_string)
-    #     IO.inspect([count_value, " -- decreased"])
-    #     return_val
-    # end
-    # |> with_response()
-
     RLServer.calls_allowed?(user_string)
     |> to_deposit(user_string, amount, currency)
   end
@@ -57,10 +39,6 @@ defmodule ExBanking.UserServer do
     {:ok, updated_user} = User.deposit(user, amount, currency)
     # {:ok,new_balance}
     return_value = {:ok, updated_user.monies[currency] |> Float.round(2)}
-
-    # call rate limiting server and tell that entry has been processed
-    # this is handle_cast
-    # count_value = RLServer.processed(user.name)
     {:reply, return_value, updated_user}
   end
 
@@ -112,7 +90,7 @@ defmodule ExBanking.UserServer do
   defp to_deposit(:ok, user_string, amount, currency) do
     return_val = GenServer.call(via(user_string), {:deposit, amount, currency})
     count_value = RLServer.processed(user_string)
-    # IO.inspect([count_value, " -- decreased"])
+
     return_val
   end
 
@@ -128,20 +106,10 @@ defmodule ExBanking.UserServer do
 
   defp to_balance(:ok, user_string, currency) do
     return_val = GenServer.call(via(user_string), {:get_balance, currency})
-    # IO.inspect("------------------------")
-    # IO.inspect(return_val)
     count_value = RLServer.processed(user_string)
-    # IO.inspect([count_value, " -- processed withdraw"])
     return_val
   end
 
-  # defp to_user_send(:too_many_requests_to_user, _, _, _, _),
-  #   do: {:error, :too_many_requests_to_receiver}
-
-  # defp to_user_send(:ok, from_user, to_user, amount, currency) do
-  #   RLServer.calls_allowed?(from_user)
-  #   |> from_user_send(from_user, to_user, amount, currency)
-  # end
   def send(from_user, to_user, amount, currency) do
     RLServer.calls_allowed?(from_user)
     |> from_user_send(from_user, to_user, amount, currency)

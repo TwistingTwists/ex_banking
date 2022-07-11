@@ -35,7 +35,6 @@ defmodule ExBanking.RateLimiterServer do
 
   @impl GenServer
   def handle_call(:processed, _from, count) do
-    # IO.inspect("=----=----=---- #{count} =----=----=----")
     {:reply, count - 1, count - 1}
   end
 
