@@ -8,9 +8,12 @@ defmodule ExBanking.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: ExBanking.Worker.start_link(arg)
-      # {ExBanking.Worker, arg}
-      ExBanking.Users.Server
+      {Registry, [name: ExBanking.Registry.User, keys: :unique]},
+      {Registry, [name: ExBanking.Registry.UserRateLimiter, keys: :unique]},
+      {DynamicSupervisor, [name: ExBanking.UserSupervisor, strategy: :one_for_one]},
+      {DynamicSupervisor, [name: ExBanking.RateLimiterSupervisor, strategy: :one_for_one]}
+
+      # ExBanking.RateLimiterSupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -1,6 +1,6 @@
 defmodule ExBanking.Users do
-  alias ExBanking.{User, Users}
-  # defstruct %{}
+  alias ExBanking.{User,Users}
+  # defstruct entries: %{}
 
   def create_or_fetch_user(users, user_string) do
     # pass list of all users from GenServer - which stores and manages users
